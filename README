@@ -1,0 +1,233 @@
+leanstick v0.2
+---------------
+
+
+Make sure you have calibrated your joystick!
+
+
+What is leanstick?
+==================
+
+leanstick maps joystick/gamepad events to shell commands.
+The commands to be executed are read from the configuration
+file, which if not specified is : /home/user/.leanstick
+
+By that you can control everything with a gamepad.
+
+
+
+Command line options?
+=====================
+
+	All are optional
+	-j <ARG>    joystick, specify the device to use
+	-f <ARG>    file, specify the configuration file to use
+	-t <NUM>    tap threshold, specify how up to many 
+	            miliseconds an axis event is considered a tap
+	-a <NUM>    axis threshold, percentage over which if an
+	            axis moves it triggers an axis event
+	-h          help
+	-q          quit, force any running instance of $APP_NAME to quit
+	-v          version, print the version number
+	-p          print configuation, prints out the current configuration
+	-e          print event, prints out the first joystick event and quits
+	-x <ARG>    execute the given command, expanding all the macros
+	
+
+
+Configuration?
+==============
+
+	leanstick looks for /home/user/.leanstick unless -f is specified
+
+	See the file sampleconfig to see how the config file should look like
+
+	The format of the configuration file was meant to be as simple and
+	readable as possible.
+
+	Basic Syntax:
+	-------------
+			joysitck event : shell command to execute
+			joystick event = internal leanstick command
+			(note ':' is for executing commands, and '=' for leanstick commands)
+
+			Lines not matching are considered as comments and ignored
+
+	Supported Events:
+	----------------
+		
+		button 'X' down	=> button number 'X' was pressed down
+
+		button 'X' up	=> button number 'X' was just released
+
+		button 'X' press => button number 'X' is being pressed.
+			The given command will be executed continuously while still pressed.
+			You can specify a delay between continuous executions using :
+		button 'X' press delay 'Y', where Y is the delay in milisecs
+
+		Similarly the same events apply to axis actions, in which the axis
+		is regarded as a plain button:
+			axis 'X' neg up
+			axis 'X' pos down
+			axis 'X' neg pressed delay 'Y'
+			where 'pos' and 'neg' specify the direction the axis was moved
+			(positive or negative)
+
+		axis 'X' pos tap  => activated by a tap of axis 'X' in the given direction
+
+	Axis Move Events:
+	-----------------
+
+		eg. axis 'x' neg move delay 'Y'
+		
+		Axis move events are similar to axis pressed events but with them leanstick
+		can pass values to the command to be executed depending on the axis value.
+
+		You can use these variables in the command to specify what values to pass:
+			${!}	-  The actual axis value
+			${%}	-  The percentage of the axis value
+			${N}	-  where N is a number, the % of axis value times N
+			${xN}	-  where N is a number, the % of axis value squared times N
+		You can also use #{!}, #{%}, #{N} and #{xN} which do the same thing but taking
+		the value of the related axis.
+
+	Stick Move Events:
+	------------------
+
+		eg. stick 'x'
+		
+		Stick move events are similar to the axis move events but get triggered
+		when any of the two axis of a stick move.
+
+		eg. stick 0 move will get triggered if axis 0 or axis 1 moves.
+		similarly stick 1 checks for axis 2 and 3, and so on.
+
+		You can use the same variables in the command as the axis move events.
+		Variables starting with '$' get the value of the first axis and the
+		ones starting with '#' get the value of the second related axis
+	
+
+	Combo Events:
+	-------------
+
+		Trigerred by combination of button and axis actions
+		example:
+			button 'X' + 'Y' + AXIS 'Z' neg delay 'D' 
+				=> will be triggered continuosly with a delay of 'D' milliseconds
+					while buttons X and Y and axis Z are being pressed
+		You can specify any number of buttons or axis
+
+
+	Profiles:
+	---------
+
+		You can specify a profile in the configuration file by:
+
+		profile = profile_name
+
+		All following events until the next profile entry will be associated with the
+		specified profile.
+
+		Events not preceded by a profile declaration are associated with the default
+		unnamed profile.
+
+		leanstick will only execute commands associated with the currently active profile.
+
+		Initially the active profile is the default profile unless the first a profile 
+		declaration comes before any event declarations.
+
+		You can switch between profiles using events with 'internal' commands.
+
+
+	Sticky Profile:
+	---------------
+
+		A sticky profile will execute its commands regardless which is the active profile.
+		It can never be set as the active profile using any of the internal profile commands.
+		To create a sticky profile, simply name a profile as 'sticky'	
+
+
+	Comments:
+	---------
+
+		Any lines above an event -> command mapping starting with the character '#' will
+		be considered as a comment/description for that mapping.
+
+		Currently there is no use for this in leanstick, but it is used by the gui frontend.
+
+		
+	Macros:
+	-------
+
+		Since v0.2 macros (think of C macros) can be used in defining a command.
+
+		Macros can be defined and used anywhere in the configuration file
+
+		Macro definition syntax:
+			without arguments
+				macro MACRONAME = macro definition
+			with arguments
+				macro MACRO(arga, argb) = macro definition with args: ${arga} and ${argb}
+
+		Macro name can only contain alphabetic characters plus the '_' character
+		Macro argument names can only contain alphabetic characters
+		
+		Argument substitution:
+			The argument substitution is very basic.
+			As you can see in the example below no quotes are needed around the arguments
+			and white space is not stripped from the arguments.
+
+		eg define a macro to send text to a window using xvkbb,
+
+			macro KEYBOARD(window, text) = xvkbd -window "${window}" -text "${text}"
+
+			# totem fullscreen (send an f key press)
+			button 0 : $KEYBOARD(totem,f)
+
+			# totem pause/play (send a 'space' key press)
+			button 1 : $KEYBOARD(totem, )
+	
+			
+
+	Internal Commands:
+	------------------
+
+		eg button 1 = 'internal command'
+			-  profile next
+				changes the active profile to the next one, in the order declared
+				in the configuration file, if it reaches the end it wraps to the first
+			-  profile previous
+				changes the active profile to the previous one, in the order declared
+				in the configuration file, if it reaches the begining it wraps to the last
+			-  profile named 'profile_name'
+				changes the active profile to the profile having the given name
+			-  exit
+				stops leanstick
+
+
+	
+	Variables:
+	----------
+
+		Some variables can be used in commands and will be expanded by leanstick 
+		when executing the command. These are:
+
+			${profile}	-	will be expanded to the active profile
+
+
+		There also variables that only make sense when assigned to axis move (AM), or stick 
+		events (ST) (as already discussed above)
+			
+			${!}	-  The actual axis value (AM) or the first stick axis (ST)
+			#{!}	-  The actual value of the related axis (AM) or the second stick axis (ST)
+
+			${%}	-  The percentage of the axis value (AM) or the first stick axis (ST)
+			#{%}	-  The percentage of the related axis (AM) or the second stick axis (ST)
+
+			${N}	-  where N is a number, N times % of the axis value (AM) or first stick axis (ST)
+			#{N}	-  where N is a number, N times % of the rel. axis value (AM) or second stick axis (ST)
+
+			${xN}	-  where N is a number, N times the % of axis value (AM) or first stick axis (ST) squared
+			#{xN}	-  where N is a number, N times the % of rel. axis value (AM) or second stick axis (ST) squared
+
+			

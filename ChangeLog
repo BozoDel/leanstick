@@ -1,0 +1,18 @@
+2008-01-29 Version v0.2:
+	- Comments for event->command mapping
+	- 'Sticky' profile
+	- Macros support
+	- Print joystick mode (-e argument)
+	- Execute command mode (-x argument)
+	- Better usage text
+	- ${profile} variable
+
+2008-10-11 Version v0.1:
+	- Do not require Linux::Joystick module
+	- Fixed memory leak caused by Linux::Joystick
+	- Added some stuff to make intergration with gleanstick possible
+	- Added the stick move events
+	- Keep track of active profile in /tmp/leanstick.active
+
+2008-01-26 Version v0.01:
+	- Initial release

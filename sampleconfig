@@ -1,0 +1,176 @@
+macro IF_RUN(what, action) = $IF(`ps -efa | grep -v grep | grep ${what} | wc -l` -gt 1,${action})
+macro IF_RUN(what, action, else) = $IF(`ps -efa | grep -v grep | grep ${what} | wc -l` -gt 1,${action},${else})
+macro IF_NOT_RUN(what, action) = $IF(`ps -efa | grep -v grep | grep ${what} | wc -l` -le 1,${action})
+macro IF_NOT_RUN(what, action, else) = $IF(`ps -efa | grep -v grep | grep ${what} | wc -l` -le 1,${action},${else})
+macro IF(what, action) = if [ ${what} ]; then ${action}; fi
+macro IF(what, action, else) = if [ ${what} ]; then ${action}; else ${else}; fi
+
+
+---------------------------------------------------------------
+profile = Sticky
+
+
+# say the time
+button 11 up : date +"%-l,%-M" | festival --tts
+
+# say the active profile
+button 10 up : echo "${profile}" | festival --tts
+
+# switch to the video profile
+button 6  + axis 0 pos = profile named video
+
+
+# switch to the navigation profile
+button 6  + axis 1 pos = profile named navigation
+
+# switch to the tv profile
+button 6  + axis 1 neg = profile named tv
+
+# switch to the music profile
+button 6  + axis 0 neg = profile named music
+
+# Sound - Volume Up
+button 9 press delay 10 : amixer -q -c 0 sset Master 1%+
+
+# Sound - Volume Down
+button 8 press delay 10 : amixer -q -c 0 sset Master 1%-
+
+# Sound - Mute/Unmute
+button 7 up : amixer -q -c 0 sset Master toggle
+
+
+
+------------------------------------------------------------
+profile = navigation
+
+
+
+# left mouse button
+button 0 up : xdotool mouseup 1
+button 0 down : xdotool mousedown 1
+
+# middle mouse button
+button 1 down : xdotool mousedown 2
+button 1 up : xdotool mouseup 2
+
+# right mouse button
+button 2 up : xdotool mouseup 3
+button 2 down : xdotool mousedown 3
+
+# Move the mouse with the two axis sticks
+stick 1 move : xdotool mousemove_relative ${5} #{5}
+stick 0 move : xdotool mousemove_relative ${10} #{10}
+
+
+
+-------------------------------------------------------------------
+profile = music
+
+
+# Say whhat is amarok playing
+button 4 up : v=`dcop amarok player getVolume`;  artist=`dcop amarok player artist`; title=`dcop amarok player title`; album=`dcop amarok player album`; dcop amarok player setVolume 25; echo "$title, by $artist" | festival --tts; dcop amarok player setVolume $v;
+
+# Amarok - Play/Pause
+button 1 up : $IF_RUN(amarok,dcop amarok player playPause)
+
+# Amarok - FFWD
+axis 2 neg press : $IF_RUN(amarok,dcop amarok player seekRelative 1)
+
+# Amarok - Previous
+button 0 up : $IF_RUN(amarok,dcop amarok player prev)
+
+# Amarok - Next
+axis 2 neg tap : $IF_RUN(amarok,dcop amarok player next)
+
+# Amarok - Rewind
+axis 2 pos press : $IF_RUN(amarok,dcop amarok player seekRelative -1)
+
+# Amarok - Start Amarok
+button 5 up : $IF_NOT_RUN(amarok,amarok -p,dcop amarok player play; dcop amarok player showOSD; dummy=0)
+
+# Amarok - Previous
+axis 2 pos tap : $IF_RUN(amarok,dcop amarok player prev)
+
+# Amarok - Show OSD
+button 3 up : $IF_RUN(amarok,dcop amarok player showOSD)
+
+# Amarok - Next
+button 2 up : $IF_RUN(amarok,dcop amarok player next)
+
+
+---------------------------------------------------------------------------------
+profile = video
+
+
+# Play/Pause for totem and vlc
+
+button 1 up : cur=`xdotool getwindowfocus`; id=`xdotool search --class totem | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key space; xdotool windowfocus $cur)
+
+button 1 up : cur=`xdotool getwindowfocus`; id=`xdotool search --title VLC | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key space; xdotool windowfocus $cur)
+
+
+
+# Fullscreen for totem and vlc
+
+button 3 up : cur=`xdotool getwindowfocus`; id=`xdotool search --class totem | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key f; xdotool windowfocus $cur)
+
+button 3 up : cur=`xdotool getwindowfocus`; id=`xdotool search --title VLC | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key f; xdotool windowfocus $cur)
+
+
+
+# FFWD for totem and vlc
+
+button 2 press delay 10 : cur=`xdotool getwindowfocus`; id=`xdotool search --class totem | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key Shift_R+Right; xdotool windowfocus $cur)
+
+button 2 press delay 10 : cur=`xdotool getwindowfocus`; id=`xdotool search --title VLC | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key Shift_L+Right; xdotool windowfocus $cur)
+
+
+
+# Rewind for totem and vlc
+
+button 0 press delay 10 : cur=`xdotool getwindowfocus`; id=`xdotool search --class totem | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key Shift_R+Left; xdotool windowfocus $cur)
+
+button 0 press delay 10 : cur=`xdotool getwindowfocus`; id=`xdotool search --title VLC | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key Shift_L+Left; xdotool windowfocus $cur)
+
+
+
+-------------------------------------------------------------------------------
+profile = tv
+
+# Start MythTv
+button 5 up : $IF_NOT_RUN(mythfronted,mythfrontend)
+
+# MythTv - Rewind
+button 0 press delay 10 : cur=`xdotool getwindowfocus`; id=`xdotool search --class Mythfrontend.real | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key Page_Up; xdotool windowfocus $cur)
+
+# MythTv - Ffwd
+button 2 press delay 10 : cur=`xdotool getwindowfocus`; id=`xdotool search --class Mythfrontend.real | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key Page_Down; xdotool windowfocus $cur)
+
+# MythTv - Press Enter
+button 1 down : cur=`xdotool getwindowfocus`; id=`xdotool search --class Mythfrontend.real | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key Return; xdotool windowfocus $cur)
+
+# MythTv - Pause
+button 3 down : cur=`xdotool getwindowfocus`; id=`xdotool search --class Mythfrontend.real | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key p; xdotool windowfocus $cur)
+
+
+
+# MythTv - Press Escape
+button 4 down : cur=`xdotool getwindowfocus`; id=`xdotool search --class Mythfrontend.real | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key Escape; xdotool windowfocus $cur)
+
+
+# MythTv - Arrow keys
+axis 4 neg down : cur=`xdotool getwindowfocus`; id=`xdotool search --class Mythfrontend.real | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key Right; xdotool windowfocus $cur)
+
+axis 4 pos down : cur=`xdotool getwindowfocus`; id=`xdotool search --class Mythfrontend.real | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key Left; xdotool windowfocus $cur)
+
+axis 5 pos down : cur=`xdotool getwindowfocus`; id=`xdotool search --class Mythfrontend.real | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key Up; xdotool windowfocus $cur)
+
+axis 5 neg down : cur=`xdotool getwindowfocus`; id=`xdotool search --class Mythfrontend.real | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key Down; xdotool windowfocus $cur)
+
+
+# MythTv - Voice Down
+axis 3 neg press delay 10 : cur=`xdotool getwindowfocus`; id=`xdotool search --class Mythfrontend.real | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key bracketleft; xdotool windowfocus $cur)
+
+# MythTv - Voice Up
+axis 3 pos press delay 10 : cur=`xdotool getwindowfocus`; id=`xdotool search --class Mythfrontend.real | head -n 1`; $IF($id,xdotool windowfocus $id; xdotool key bracketright; xdotool windowfocus $cur)
+
